@@ -1,19 +1,17 @@
-// gyazowin.cpp : アプリケーションのエントリ ポイントを定義します。
+// gyazowin.cpp
 //
 
 #include "stdafx.h"
 #include "gyazowin.h"
 
-// グローバル変数:
 HINSTANCE hInst;							// 現在のインターフェイス
 TCHAR *szTitle			= _T("Gyazo");		// タイトル バーのテキスト
 TCHAR *szWindowClass	= _T("GYAZOWIN");	// メイン ウィンドウ クラス名
 TCHAR *szWindowClassL	= _T("GYAZOWINL");	// レイヤー ウィンドウ クラス名
 HWND hLayerWnd;
 
-int ofX, ofY;	// 画面オフセット
+int ofX, ofY;
 
-// プロトタイプ宣言
 ATOM				MyRegisterClass(HINSTANCE hInstance);
 BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -34,7 +32,6 @@ BOOL				uploadFile(HWND hwnd, LPCTSTR fileName);
 std::string			getId();
 BOOL				saveId(const WCHAR* str);
 
-// エントリーポイント
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPTSTR    lpCmdLine,
@@ -48,7 +45,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	TCHAR	szThisPath[MAX_PATH];
 	DWORD   sLen;
 
-	// 自身のディレクトリを取得する
 	sLen = GetModuleFileName(NULL, szThisPath, MAX_PATH);
 	for(unsigned int i = sLen; i >= 0; i--) {
 		if(szThisPath[i] == _T('\\')) {
@@ -57,15 +53,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		}
 	}
 
-	// カレントディレクトリを exe と同じ場所に設定
 	SetCurrentDirectory(szThisPath);
 
-	// 引数にファイルが指定されていたら
 	if ( 2 == __argc )
 	{
-		// ファイルをアップロードして終了
 		if (isPng(__targv[1])) {
-			// PNG はそのままupload
 			uploadFile(NULL, __targv[1]);
 		} else if (isGIF87a(__targv[1])) {
 			uploadFile(NULL, __targv[1]);
@@ -74,16 +66,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		} else if (isJPEG(__targv[1])) {
 			uploadFile(NULL, __targv[1]);
 		} else {
-			// PNG 形式に変換
 			TCHAR tmpDir[MAX_PATH], tmpFile[MAX_PATH];
 			GetTempPath(MAX_PATH, tmpDir);
 			GetTempFileName(tmpDir, _T("gya"), 0, tmpFile);
 
 			if (convertPNG(tmpFile, __targv[1])) {
-				//アップロード
 				uploadFile(NULL, tmpFile);
 			} else {
-				// PNGに変換できなかった...
 				MessageBox(NULL, _T("Cannot convert this image"), szTitle,
 					MB_OK | MB_ICONERROR);
 			}
@@ -92,16 +81,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		return TRUE;
 	}
 
-	// ウィンドウクラスを登録
 	MyRegisterClass(hInstance);
 
-	// アプリケーションの初期化を実行します:
 	if (!InitInstance (hInstance, nCmdShow))
 	{
 		return FALSE;
 	}
 
-	// メイン メッセージ ループ:
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
 		TranslateMessage(&msg);
@@ -111,7 +97,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	return (int) msg.wParam;
 }
 
-// ヘッダを見て PNG 画像かどうか(一応)チェック
 BOOL isPng(LPCTSTR fileName)
 {
 	unsigned char pngHead[] = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
@@ -121,7 +106,6 @@ BOOL isPng(LPCTSTR fileName)
 
 	if (0 != _tfopen_s(&fp, fileName, _T("rb")) ||
 		8 != fread(readHead, 1, 8, fp)) {
-		// ファイルが読めない
 		return FALSE;
 	}
 	fclose(fp);
@@ -197,33 +181,30 @@ BOOL isJPEG(LPCTSTR fileName)
 
 }
 
-// ウィンドウクラスを登録
 ATOM MyRegisterClass(HINSTANCE hInstance)
 {
 	WNDCLASS wc;
 
-	// メインウィンドウ
-	wc.style         = 0;							// WM_PAINT を送らない
+	wc.style         = 0;							// WM_PAINT
 	wc.lpfnWndProc   = WndProc;
 	wc.cbClsExtra    = 0;
 	wc.cbWndExtra    = 0;
 	wc.hInstance     = hInstance;
 	wc.hIcon         = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_GYAZOWIN));
-	wc.hCursor       = LoadCursor(NULL, IDC_CROSS);	// + のカーソル
-	wc.hbrBackground = 0;							// 背景も設定しない
+	wc.hCursor       = LoadCursor(NULL, IDC_CROSS);
+	wc.hbrBackground = 0;
 	wc.lpszMenuName  = 0;
 	wc.lpszClassName = szWindowClass;
 
 	RegisterClass(&wc);
 
-	// レイヤーウィンドウ
 	wc.style         = CS_HREDRAW | CS_VREDRAW;
 	wc.lpfnWndProc   = LayerWndProc;
 	wc.cbClsExtra    = 0;
 	wc.cbWndExtra    = 0;
 	wc.hInstance     = hInstance;
 	wc.hIcon         = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_GYAZOWIN));
-	wc.hCursor       = LoadCursor(NULL, IDC_CROSS);	// + のカーソル
+	wc.hCursor       = LoadCursor(NULL, IDC_CROSS);
 	wc.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
 	wc.lpszMenuName  = 0;
 	wc.lpszClassName = szWindowClassL;
@@ -231,26 +212,21 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 	return RegisterClass(&wc);
 }
 
-
-// インスタンスの初期化（全画面をウィンドウで覆う）
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
 	HWND hWnd;
 //	HWND hLayerWnd;
-	hInst = hInstance; // グローバル変数にインスタンス処理を格納します。
+	hInst = hInstance;
 
 	int x, y, w, h;
 
-	// 仮想スクリーン全体をカバー
 	x = GetSystemMetrics(SM_XVIRTUALSCREEN);
 	y = GetSystemMetrics(SM_YVIRTUALSCREEN);
 	w = GetSystemMetrics(SM_CXVIRTUALSCREEN);
 	h = GetSystemMetrics(SM_CYVIRTUALSCREEN);
 
-	// x, y のオフセット値を覚えておく
 	ofX = x; ofY = y;
 
-	// 完全に透過したウィンドウを作る
 	hWnd = CreateWindowEx(
 		WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW | WS_EX_TOPMOST
 #if(_WIN32_WINNT >= 0x0500)
@@ -261,21 +237,17 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		0, 0, 0, 0,
 		NULL, NULL, hInstance, NULL);
 
-	// 作れなかった...?
 	if (!hWnd) return FALSE;
 
-	// 全画面を覆う
 	MoveWindow(hWnd, x, y, w, h, FALSE);
 
-	// nCmdShow を無視 (SW_MAXIMIZE とかされると困る)
+	// nCmdShow (SW_MAXIMIZE)
 	ShowWindow(hWnd, SW_SHOW);
 	UpdateWindow(hWnd);
 
-	// ESCキー検知タイマー
+	// ESC
 	SetTimer(hWnd, 1, 100, NULL);
 
-
-	// レイヤーウィンドウの作成
 	hLayerWnd = CreateWindowEx(
 	 WS_EX_TOOLWINDOW
 #if(_WIN32_WINNT >= 0x0500)
@@ -295,7 +267,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	return TRUE;
 }
 
-// 指定されたフォーマットに対応する Encoder の CLSID を取得する
+// Encoder
 // Cited from MSDN Library: Retrieving the Class Identifier for an Encoder
 int GetEncoderClsid(const WCHAR* format, CLSID* pClsid)
 {
@@ -328,16 +300,14 @@ int GetEncoderClsid(const WCHAR* format, CLSID* pClsid)
    return -1;  // Failure
 }
 
-// ラバーバンドを描画.
 VOID drawRubberband(HDC hdc, LPRECT newRect, BOOL erase)
 {
 
-	static BOOL firstDraw = TRUE;	// 1 回目は前のバンドの消去を行わない
-	static RECT lastRect  = {0};	// 最後に描画したバンド
-	static RECT clipRect  = {0};	// 最後に描画したバンド
+	static BOOL firstDraw = TRUE;
+	static RECT lastRect  = {0};
+	static RECT clipRect  = {0};
 
 	if(firstDraw) {
-		// レイヤーウィンドウを表示
 		ShowWindow(hLayerWnd, SW_SHOW);
 		UpdateWindow(hLayerWnd);
 
@@ -345,12 +315,10 @@ VOID drawRubberband(HDC hdc, LPRECT newRect, BOOL erase)
 	}
 
 	if (erase) {
-		// レイヤーウィンドウを隠す
 		ShowWindow(hLayerWnd, SW_HIDE);
 
 	}
 
-	// 座標チェック
 	clipRect = *newRect;
 	if ( clipRect.right  < clipRect.left ) {
 		int tmp = clipRect.left;
@@ -367,49 +335,9 @@ VOID drawRubberband(HDC hdc, LPRECT newRect, BOOL erase)
 
 
 	return;
-
-/* rakusai 2009/11/2
-
-	// XOR で描画
-	int hPreRop = SetROP2(hdc, R2_XORPEN);
-
-	// 点線
-	HPEN hPen = CreatePen(PS_DOT , 1, 0);
-	SelectObject(hdc, hPen);
-	SelectObject(hdc, GetStockObject(NULL_BRUSH));
-
-	if(!firstDraw) {
-		// 前のを消す
-		Rectangle(hdc, lastRect.left, lastRect.top,
-			lastRect.right + 1, lastRect.bottom + 1);
-	} else {
-		firstDraw = FALSE;
-	}
-
-	// 新しい座標を記憶
-	lastRect = *newRect;
-
-
-
-
-	if (!erase) {
-
-		// 枠を描画
-		Rectangle(hdc, lastRect.left, lastRect.top,
-			lastRect.right + 1, lastRect.bottom + 1);
-
-	}
-
-
-	// 後処理
-	SetROP2(hdc, hPreRop);
-	DeleteObject(hPen);
-
-*/
-
 }
 
-// PNG 形式に変換
+// PNG
 BOOL convertPNG(LPCTSTR destFile, LPCTSTR srcFile)
 {
 	BOOL				res = FALSE;
@@ -418,7 +346,7 @@ BOOL convertPNG(LPCTSTR destFile, LPCTSTR srcFile)
 	ULONG_PTR			gdiplusToken;
 	CLSID				clsidEncoder;
 
-	// GDI+ の初期化
+	// GDI+
 	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
 	Image *b = new Image(srcFile, 0);
@@ -427,20 +355,18 @@ BOOL convertPNG(LPCTSTR destFile, LPCTSTR srcFile)
 		if (GetEncoderClsid(L"image/png", &clsidEncoder)) {
 			// save!
 			if (0 == b->Save(destFile, &clsidEncoder, 0) ) {
-					// 保存できた
 					res = TRUE;
 			}
 		}
 	}
 
-	// 後始末
 	delete b;
 	GdiplusShutdown(gdiplusToken);
 
 	return res;
 }
 
-// PNG 形式で保存 (GDI+ 使用)
+// PNG
 BOOL savePNG(LPCTSTR fileName, HBITMAP newBMP)
 {
 	BOOL				res = FALSE;
@@ -449,29 +375,26 @@ BOOL savePNG(LPCTSTR fileName, HBITMAP newBMP)
 	ULONG_PTR			gdiplusToken;
 	CLSID				clsidEncoder;
 
-	// GDI+ の初期化
+	// GDI+
 	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
-	// HBITMAP から Bitmap を作成
+	// HBITMAP Bitmap
 	Bitmap *b = new Bitmap(newBMP, NULL);
 
 	if (GetEncoderClsid(L"image/png", &clsidEncoder)) {
 		// save!
 		if (0 ==
 			b->Save(fileName, &clsidEncoder, 0) ) {
-				// 保存できた
 				res = TRUE;
 		}
 	}
 
-	// 後始末
 	delete b;
 	GdiplusShutdown(gdiplusToken);
 
 	return res;
 }
 
-// レイヤーウィンドウプロシージャ
 LRESULT CALLBACK LayerWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HDC hdc;
@@ -493,23 +416,22 @@ LRESULT CALLBACK LayerWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		SelectObject(hdc, hPen);
 		Rectangle(hdc,0,0,clipRect.right,clipRect.bottom);
 
-		//矩形のサイズを出力
 		int fHeight;
 		fHeight = -MulDiv(8, GetDeviceCaps(hdc, LOGPIXELSY), 72);
-		hFont = CreateFont(fHeight,    //フォント高さ
-			0,                    //文字幅
-			0,                    //テキストの角度
-			0,                    //ベースラインとｘ軸との角度
-			FW_REGULAR,            //フォントの重さ（太さ）
-			FALSE,                //イタリック体
-			FALSE,                //アンダーライン
-			FALSE,                //打ち消し線
-			ANSI_CHARSET,    //文字セット
-			OUT_DEFAULT_PRECIS,    //出力精度
-			CLIP_DEFAULT_PRECIS,//クリッピング精度
-			PROOF_QUALITY,        //出力品質
-			FIXED_PITCH | FF_MODERN,//ピッチとファミリー
-			L"Tahoma");    //書体名
+		hFont = CreateFont(fHeight,
+			0,
+			0,
+			0,
+			FW_REGULAR,
+			FALSE,
+			FALSE,
+			FALSE,
+			ANSI_CHARSET,
+			OUT_DEFAULT_PRECIS,
+			CLIP_DEFAULT_PRECIS,
+			PROOF_QUALITY,
+			FIXED_PITCH | FF_MODERN,
+			L"Tahoma");
 
 		SelectObject(hdc, hFont);
 		// show size
@@ -549,7 +471,6 @@ LRESULT CALLBACK LayerWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 
 }
 
-// ウィンドウプロシージャ
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HDC hdc;
@@ -561,13 +482,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_RBUTTONDOWN:
-		// キャンセル
 		DestroyWindow(hWnd);
 		return DefWindowProc(hWnd, message, wParam, lParam);
 		break;
 
 	case WM_TIMER:
-		// ESCキー押下の検知
 		if (GetKeyState(VK_ESCAPE) & 0x8000){
 			DestroyWindow(hWnd);
 			return DefWindowProc(hWnd, message, wParam, lParam);
@@ -576,7 +495,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_MOUSEMOVE:
 		if (onClip) {
-			// 新しい座標をセット
 			clipRect.right  = LOWORD(lParam) + ofX;
 			clipRect.bottom = HIWORD(lParam) + ofY;
 
@@ -590,39 +508,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_LBUTTONDOWN:
 		{
-			// クリップ開始
 			onClip = TRUE;
 
-			// 初期位置をセット
 			clipRect.left = LOWORD(lParam) + ofX;
 			clipRect.top  = HIWORD(lParam) + ofY;
 
-
-
-			// マウスをキャプチャ
 			SetCapture(hWnd);
 		}
 		break;
 
 	case WM_LBUTTONUP:
 		{
-			// クリップ終了
 			onClip = FALSE;
 
-			// マウスのキャプチャを解除
 			ReleaseCapture();
 
-			// 新しい座標をセット
 			clipRect.right  = LOWORD(lParam) + ofX;
 			clipRect.bottom = HIWORD(lParam) + ofY;
 
-			// 画面に直接描画，って形
 			HDC hdc = GetDC(NULL);
 
-			// 線を消す
 			drawRubberband(hdc, &clipRect, TRUE);
 
-			// 座標チェック
 			if ( clipRect.right  < clipRect.left ) {
 				int tmp = clipRect.left;
 				clipRect.left   = clipRect.right;
@@ -634,54 +541,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				clipRect.bottom = tmp;
 			}
 
-			// 画像のキャプチャ
 			int iWidth, iHeight;
 			iWidth  = clipRect.right  - clipRect.left + 1;
 			iHeight = clipRect.bottom - clipRect.top  + 1;
 
 			if(iWidth == 0 || iHeight == 0) {
-				// 画像になってない, なにもしない
 				ReleaseDC(NULL, hdc);
 				DestroyWindow(hWnd);
 				break;
 			}
 
-			// ビットマップバッファを作成
 			HBITMAP newBMP = CreateCompatibleBitmap(hdc, iWidth, iHeight);
 			HDC	    newDC  = CreateCompatibleDC(hdc);
 
-			// 関連づけ
 			SelectObject(newDC, newBMP);
 
-			// 画像を取得
 			BitBlt(newDC, 0, 0, iWidth, iHeight,
 				hdc, clipRect.left, clipRect.top, SRCCOPY);
 
-			// ウィンドウを隠す!
 			ShowWindow(hWnd, SW_HIDE);
 			/*
-			// 画像をクリップボードにコピー
 			if ( OpenClipboard(hWnd) ) {
-				// 消去
 				EmptyClipboard();
-				// セット
 				SetClipboardData(CF_BITMAP, newBMP);
-				// 閉じる
 				CloseClipboard();
 			}
 			*/
 
-			// テンポラリファイル名を決定
 			TCHAR tmpDir[MAX_PATH], tmpFile[MAX_PATH];
 			GetTempPath(MAX_PATH, tmpDir);
 			GetTempFileName(tmpDir, _T("gya"), 0, tmpFile);
 
 			if (savePNG(tmpFile, newBMP)) {
 
-				// うｐ
 				if (!uploadFile(hWnd, tmpFile)) {
-					// アップロードに失敗...
-					// エラーメッセージは既に表示されている
 
 					/*
 					TCHAR sysDir[MAX_PATH];
@@ -701,12 +594,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					*/
 				}
 			} else {
-				// PNG保存失敗...
 				MessageBox(hWnd, _T("Cannot save png image"), szTitle,
 					MB_OK | MB_ICONERROR);
 			}
 
-			// 後始末
 			DeleteFile(tmpFile);
 
 			DeleteDC(newDC);
@@ -728,7 +619,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-// クリップボードに文字列をコピー
 VOID setClipBoardText(const char* str)
 {
 
@@ -744,17 +634,15 @@ VOID setClipBoardText(const char* str)
 	strncpy_s(pText, slen, str, slen);
 	GlobalUnlock(hText);
 
-	// クリップボードを開く
 	OpenClipboard(NULL);
 	EmptyClipboard();
 	SetClipboardData(CF_TEXT, hText);
 	CloseClipboard();
 
-	// 解放
 	GlobalFree(hText);
 }
 
-// 指定された URL (char*) をブラウザで開く
+// URL (char*)
 VOID execUrl(const char* str)
 {
 	size_t  slen;
@@ -763,10 +651,8 @@ VOID execUrl(const char* str)
 
 	TCHAR *wcUrl = (TCHAR *)malloc(slen * sizeof(TCHAR));
 
-	// ワイド文字に変換
 	mbstowcs_s(&dcount, wcUrl, slen, str, slen);
 
-	// open コマンドを実行
 	SHELLEXECUTEINFO lsw = {0};
 	lsw.cbSize = sizeof(SHELLEXECUTEINFO);
 	lsw.lpVerb = _T("open");
@@ -777,7 +663,6 @@ VOID execUrl(const char* str)
 	free(wcUrl);
 }
 
-// ID を生成・ロードする
 std::string getId()
 {
 
@@ -795,19 +680,17 @@ std::string getId()
 
 	std::string idStr;
 
-	// まずはファイルから ID をロード
 	std::ifstream ifs;
 
 	ifs.open(idFile);
 	if (! ifs.fail()) {
-		// ID を読み込む
+		// ID
 		ifs >> idStr;
 		ifs.close();
 	} else{
 		std::ifstream ifsold;
 		ifsold.open(idOldFile);
 		if (! ifsold.fail()) {
-			// 同一ディレクトリからID を読み込む(旧バージョンとの互換性)
 			ifsold >> idStr;
 			ifsold.close();
 		}
@@ -836,10 +719,8 @@ BOOL saveId(const WCHAR* str)
 	slen  = _tcslen(str) + 1; // NULL
 
 	char *idStr = (char *)malloc(slen * sizeof(char));
-	// バイト文字に変換
 	wcstombs_s(&dcount, idStr, slen, str, slen);
 
-	// ID を保存する
 	CreateDirectory(idDir,NULL);
 	std::ofstream ofs;
 	ofs.open(idFile);
@@ -847,7 +728,6 @@ BOOL saveId(const WCHAR* str)
 		ofs << idStr;
 		ofs.close();
 
-		// 旧設定ファイルの削除
 		if (PathFileExists(idOldFile)){
 			DeleteFile(idOldFile);
 		}
@@ -860,24 +740,23 @@ BOOL saveId(const WCHAR* str)
 	return TRUE;
 }
 
-// PNG ファイルをアップロードする.
+// PNG
 BOOL uploadFile(HWND hwnd, LPCTSTR fileName)
 {
 	const TCHAR* UPLOAD_SERVER	= _T("upload.gyazo.com");
 	const TCHAR* UPLOAD_PATH	= _T("/upload.cgi");
 
 	const char*  sBoundary = "----BOUNDARYBOUNDARY----";		// boundary
-	const char   sCrLf[]   = { 0xd, 0xa, 0x0 };					// 改行(CR+LF)
+	const char   sCrLf[]   = { 0xd, 0xa, 0x0 };					// (CR+LF)
 	const TCHAR* szHeader  =
 		_T("Content-type: multipart/form-data; boundary=----BOUNDARYBOUNDARY----");
 
-	std::ostringstream	buf;	// 送信メッセージ
+	std::ostringstream	buf;
 	std::string			idStr;	// ID
 
-	// ID を取得
+	// ID
 	idStr = getId();
 
-	// メッセージの構成
 	// -- "id" part
 	buf << "--";
 	buf << sBoundary;
@@ -898,7 +777,7 @@ BOOL uploadFile(HWND hwnd, LPCTSTR fileName)
 	//buf << sCrLf;
 	buf << sCrLf;
 
-	// 本文: PNG ファイルを読み込む
+	// PNG
 	std::ifstream png;
 	png.open(fileName, std::ios::binary);
 	if (png.fail()) {
@@ -909,17 +788,14 @@ BOOL uploadFile(HWND hwnd, LPCTSTR fileName)
 	buf << png.rdbuf();		// read all & append to buffer
 	png.close();
 
-	// 最後
 	buf << sCrLf;
 	buf << "--";
 	buf << sBoundary;
 	buf << "--";
-	buf << sCrLf;
 
-	// メッセージ完成
 	std::string oMsg(buf.str());
 
-	// WinInet を準備 (proxy は 規定の設定を利用)
+	// WinInet (proxy)
 	HINTERNET hSession    = InternetOpen(szTitle,
 		INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
 	if(NULL == hSession) {
@@ -928,7 +804,6 @@ BOOL uploadFile(HWND hwnd, LPCTSTR fileName)
 		return FALSE;
 	}
 
-	// 接続先
 	HINTERNET hConnection = InternetConnect(hSession,
 		UPLOAD_SERVER, INTERNET_DEFAULT_HTTP_PORT,
 		NULL, NULL, INTERNET_SERVICE_HTTP, 0, NULL);
@@ -938,7 +813,6 @@ BOOL uploadFile(HWND hwnd, LPCTSTR fileName)
 		return FALSE;
 	}
 
-	// 要求先の設定
 	HINTERNET hRequest    = HttpOpenRequest(hConnection,
 		_T("POST"), UPLOAD_PATH, NULL,
 		NULL, NULL, INTERNET_FLAG_DONT_CACHE | INTERNET_FLAG_RELOAD, NULL);
@@ -948,7 +822,7 @@ BOOL uploadFile(HWND hwnd, LPCTSTR fileName)
 		return FALSE;
 	}
 
-	// User-Agentを指定
+	// User-Agent
 	const TCHAR* ua = _T("User-Agent: Gyazowin/1.0\r\n");
 	BOOL bResult = HttpAddRequestHeaders(
 		hRequest, ua, _tcslen(ua),
@@ -959,19 +833,17 @@ BOOL uploadFile(HWND hwnd, LPCTSTR fileName)
 		return FALSE;
 	}
 
-	// 要求を送信
 	if (HttpSendRequest(hRequest,
                     szHeader,
 					lstrlen(szHeader),
                     (LPVOID)oMsg.c_str(),
 					(DWORD) oMsg.length()))
 	{
-		// 要求は成功
 
 		DWORD resLen = 8;
 		TCHAR resCode[8];
 
-		// status code を取得
+		// status code
 		HttpQueryInfo(hRequest, HTTP_QUERY_STATUS_CODE, resCode, &resLen, 0);
 		if( _ttoi(resCode) != 200 ) {
 			// upload 失敗 (status error)
@@ -993,34 +865,33 @@ BOOL uploadFile(HWND hwnd, LPCTSTR fileName)
 				saveId(newid);
 			}
 
-			// 結果 (URL) を読取る
+			// (URL)
 			DWORD len;
 			char  resbuf[1024];
 			std::string result;
 
-			// そんなに長いことはないけどまあ一応
 			while(InternetReadFile(hRequest, (LPVOID) resbuf, 1024, &len)
 				&& len != 0)
 			{
 				result.append(resbuf, len);
 			}
 
-			// 取得結果は NULL terminate されていないので
+			// NULL terminate
 			result += '\0';
 
-			// クリップボードに URL をコピー
+			// URL
 			setClipBoardText(result.c_str());
 
-			// URL を起動
+			// URL
 			execUrl(result.c_str());
 
 			return TRUE;
 		}
 	} else {
-		// アップロード失敗...
 		MessageBox(hwnd, _T("Failed to upload"), szTitle, MB_ICONERROR | MB_OK);
 	}
 
 	return FALSE;
 
 }
+

@@ -1,41 +1,34 @@
-// stdafx.h : 標準のシステム インクルード ファイルのインクルード ファイル、または
-// 参照回数が多く、かつあまり変更されない、プロジェクト専用のインクルード ファイル
-// を記述します。
-//
-
+// stdafx.h
 #pragma once
 
-// 下で指定された定義の前に対象プラットフォームを指定しなければならない場合、以下の定義を変更してください。
-// 異なるプラットフォームに対応する値に関する最新情報については、MSDN を参照してください。
-#ifndef WINVER				// Windows XP 以降のバージョンに固有の機能の使用を許可します。
-#define WINVER 0x0501		// これを Windows の他のバージョン向けに適切な値に変更してください。
+#ifndef WINVER				// Windows XP
+#define WINVER 0x0501		// Windows
 #endif
 
-#ifndef _WIN32_WINNT		// Windows XP 以降のバージョンに固有の機能の使用を許可します。                   
-#define _WIN32_WINNT 0x0501	// これを Windows の他のバージョン向けに適切な値に変更してください。
-#endif						
-
-#ifndef _WIN32_WINDOWS		// Windows 98 以降のバージョンに固有の機能の使用を許可します。
-#define _WIN32_WINDOWS 0x0410 // これを Windows Me またはそれ以降のバージョン向けに適切な値に変更してください。
+#ifndef _WIN32_WINNT		// Windows XP
+#define _WIN32_WINNT 0x0501	// Windows
 #endif
 
-#ifndef _WIN32_IE			// IE 6.0 以降のバージョンに固有の機能の使用を許可します。
-#define _WIN32_IE 0x0600	// これを IE. の他のバージョン向けに適切な値に変更してください。
+#ifndef _WIN32_WINDOWS		// Windows 98
+#define _WIN32_WINDOWS 0x0410 // Windows Me
 #endif
 
-// #define WIN32_LEAN_AND_MEAN		// Windows ヘッダーから使用されていない部分を除外します。
-// Windows ヘッダー ファイル:
+#ifndef _WIN32_IE			// IE 6.0
+#define _WIN32_IE 0x0600	// IE
+#endif
+
+// #define WIN32_LEAN_AND_MEAN		// Windows
+// Windows
 #include <windows.h>
 
-// C ランタイム ヘッダー ファイル
 #include <stdlib.h>
 #include <malloc.h>
 #include <memory.h>
 #include <tchar.h>
 
-// TODO: プログラムに必要な追加ヘッダーをここで参照してください。
+// TODO:
 #include <strsafe.h>
-#include <shlobj.h> 
+#include <shlobj.h>
 #include "shlwapi.h"
 #pragma comment (lib, "Shlwapi.lib")
 
@@ -43,7 +36,7 @@
 #pragma comment (lib, "Gdiplus.lib")
 using namespace Gdiplus;
 
-#include "wininet.h" 
+#include "wininet.h"
 #pragma comment(lib,"wininet.lib")
 
 #include <time.h>
